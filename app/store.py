@@ -12,6 +12,7 @@ def connection():
     try:
         db.execute("PRAGMA journal_mode=WAL")
         db.execute("CREATE TABLE IF NOT EXISTS runs (id TEXT PRIMARY KEY, payload TEXT NOT NULL, version INTEGER NOT NULL DEFAULT 1, state TEXT NOT NULL DEFAULT 'pending', note TEXT NOT NULL DEFAULT '')")
+        db.execute("CREATE TABLE IF NOT EXISTS amendments (id TEXT PRIMARY KEY, baseline_id TEXT NOT NULL, payload TEXT NOT NULL, created_at TEXT NOT NULL)")
         yield db
         db.commit()
     except BaseException:
@@ -47,3 +48,20 @@ def review(key, version, state, note):
         if not updated:
             raise TraceError("STALE", "批次已更新，请刷新后复核", 409)
     return get(key)
+def save_amendment(payload):
+    # 内容寻址 + INSERT OR IGNORE：同一份修订重跑只返回既有记录，不新增、不覆盖、不丢失。
+    key=payload["manifest"]["amendment_id"]
+    with connection() as db:
+        db.execute("INSERT OR IGNORE INTO amendments(id,baseline_id,payload,created_at) VALUES (?,?,?,?)",
+                   (key,payload["manifest"]["baseline_id"],json.dumps(payload,ensure_ascii=False),payload["manifest"]["created_at"]))
+    return get_amendment(key)
+def get_amendment(key):
+    with connection() as db:
+        row=db.execute("SELECT * FROM amendments WHERE id=?", (key,)).fetchone()
+    if row is None:
+        raise TraceError("NOT_FOUND", "修订记录不存在，请重新登记", 404)
+    return json.loads(row["payload"])
+def amendment_history():
+    with connection() as db:
+        rows=db.execute("SELECT id,baseline_id,created_at FROM amendments ORDER BY rowid DESC LIMIT 100").fetchall()
+    return [dict(r) for r in rows]

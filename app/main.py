@@ -11,6 +11,7 @@ from app.modules.recall.routes import router as recall
 from app.modules.quarantine.routes import router as quarantine
 from app.modules.reconcile.routes import router as reconcile
 from app.modules.batches.routes import router as batches
+from app.modules.amendment.routes import router as amendments
 app=FastAPI(title="禾链 · 食品批次追溯",version="1.0.0")
 @app.exception_handler(TraceError)
 async def trace_error(request:Request,exc:TraceError):
@@ -18,4 +19,4 @@ async def trace_error(request:Request,exc:TraceError):
 @app.get("/health")
 def health():return {"status":"ok"}
 app.mount("/static",StaticFiles(directory=str(ROOT/"app/static")),name="static")
-for router in (intake,contract,genealogy,recall,quarantine,reconcile,batches,web):app.include_router(router)
+for router in (intake,contract,genealogy,recall,quarantine,reconcile,batches,amendments,web):app.include_router(router)

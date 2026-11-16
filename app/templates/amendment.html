@@ -1,0 +1,70 @@
+{% extends "base.html" %}{% block content %}
+<div class="grid recall-grid">
+  <section class="panel">
+    <div class="panel__head"><h2>修订裁决 · 召回清单</h2>
+      <span>{% if is_amendment %}模式 {{ data.mode }}{% else %}登记修订{% endif %}</span></div>
+    {% if is_amendment %}
+    <div class="panel__body">
+      <dl>
+        <dt>修订号</dt><dd>{{ data.manifest.amendment_id }}</dd>
+        <dt>基线运行号</dt><dd>{{ data.manifest.baseline_id }}</dd>
+        <dt>未提及事件</dt><dd>{{ data.unmentioned|length }}</dd>
+        <dt>保留 / 移除 / 待核查</dt>
+        <dd>{{ data.decisions|selectattr('state','equalto','keep')|list|length }}
+          / {{ data.decisions|selectattr('state','equalto','remove')|list|length }}
+          / {{ data.decisions|selectattr('state','equalto','review')|list|length }}</dd>
+      </dl>
+      <a class="btn primary" href="/api/amendments/{{ data.manifest.amendment_id }}/evidence.csv">导出修订证据清单</a>
+    </div>
+    {% else %}
+    <div class="panel__body">
+      <form id="amend-form" data-baseline="{{ data.manifest.run_id }}">
+        <label class="field">召回起点（逗号分隔）
+          <input name="seeds" value="{{ data.recall.seeds|join(',') }}" required></label>
+        <label class="field">未提及旧行处置
+          <select name="mode">
+            <option value="pending" selected>pending · 待核查（默认，不臆断撤回）</option>
+            <option value="retain">retain · 全部沿用</option>
+            <option value="withdraw">withdraw · 视为撤回</option>
+          </select></label>
+        <label class="field">修订台账（仅含重发事件，revision 须高于基线）
+          <textarea name="text" rows="6" placeholder="粘贴 CSV，含表头"></textarea></label>
+        <label class="field">或上传文件<input type="file" id="amend-file"></label>
+        <button class="btn primary">登记并裁决</button>
+      </form>
+    </div>
+    {% endif %}
+  </section>
+
+  <section class="panel">
+    <div class="panel__head"><h2>成品三态裁决</h2><input class="filter" placeholder="筛选成品批次" aria-label="筛选成品"></div>
+    <div class="table-scroll">
+      <table class="ledger">
+        <thead><tr><th>成品批次</th><th>裁决</th><th>依据</th><th>证据路径</th><th class="num">行号</th></tr></thead>
+        <tbody>
+        {% if is_amendment %}
+          {% for d in data.decisions %}
+          <tr class="{{ 'issue' if d.state=='remove' else '' }}">
+            <td><code>{{ d.lot }}</code></td>
+            <td><strong>{{ state_label[d.state] }}</strong></td>
+            <td><code>{{ d.reason }}</code><br><small>基线={{ d.in_baseline_recall }} 修订后={{ d.in_amended_recall }} 已确认={{ d.confirmed_path }} 证据={{ d.evidence_source }}</small></td>
+            <td class="raw" title="{{ d.path|join(' → ') }}">{{ d.path|join(' → ') or '—' }}</td>
+            <td class="num">{{ d.lines|join(' / ') or '—' }}</td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr><td colspan="5" class="empty">登记修订后生成保留 / 移除 / 待核查裁决。</td></tr>
+        {% endif %}</tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel stamp">
+    <h2>未提及旧行处置</h2>
+    {% if is_amendment %}
+      {% for u in data.unmentioned %}<code>{{ u.event_id }} · {{ u.reason }}</code>{% endfor %}
+      {% if not data.unmentioned %}<span>无未提及事件</span>{% endif %}
+    {% else %}<span>待登记修订</span>{% endif %}
+  </section>
+</div>
+{% endblock %}
