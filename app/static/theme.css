@@ -1,0 +1,7 @@
+:root {
+ --bg: #e9e4d9; --rail: #302d27; --surface: #fcfaf3; --surface-2: #f0eadc;
+ --ink: #302d27; --ink-muted: #797466; --line: #cfc7b6; --line-strong: #8c8270;
+ --accent: #a73c2b; --accent-ink: #fff8eb; --ok: #387044; --warn: #946524; --bad: #a12c2c; --info: #476777;
+ --font-ui: ui-monospace, "SFMono-Regular", "Songti SC", monospace; --font-num: "SFMono-Regular", Consolas, monospace;
+ --font-doc: "Songti SC", Georgia, serif; --radius: 0px; --radius-sm: 0px; --pad: 16px; --gap: 16px; --row: 32px; --bar: 54px; --dur: 100ms; --shadow: none;
+}
